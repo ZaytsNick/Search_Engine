@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 TEST(sample_test_case, sample_test)
 {
-EXPECT_EQ(1, 1);
+EXPECT_EQ(1, 0);
 }
 //
 
@@ -17,7 +17,7 @@ std::vector<std::vector<std::pair<int, float>>> setAnswer( )
     for (int i = 0; i < 5; i++) {
         std::vector<std::pair<int, float>> tmp;
         for (int j = 0; j < 5; j++) {
-            if (i != 2) { tmp.push_back(std::pair<int, float>(j, 0.21)); }
+            if (i != 2) { tmp.emplace_back(j, 0.21); }//std::pair<int, float>(j, 0.21)); }
         }
         answers.push_back(tmp);
     }
@@ -48,11 +48,10 @@ int GetResponsesLimit()
     if(configFile.is_open()) {
         nlohmann::json dict;
         configFile>>dict;
-        if (dict.contains("max_responses"))
-        {            return dict["max_responses"];}
-    } else {
-        throw std::runtime_error("Unable to open config file.");
+        if (dict.contains("max_responses")){
+            return dict["max_responses"];}
     }
+    throw std::runtime_error("Unable to open config file.");
 }
 std::vector<std::string> GetRequests()
 {
@@ -81,7 +80,7 @@ void putAnswers(std::vector<std::vector<std::pair<int, float>>> answers)
         std::ostringstream tmp;
         tmp << "request" << std::setw(3) << std::setfill('0') << i + 1;
         std::string requestId = tmp.str();
-        if (answers[i].size() != 0) {
+        if (!answers.empty() /*answers[i].size() != 0*/) {
             nlohmann::json ansRENAME;
             for (int j = 0; j < 5; j++) {
                 ansRENAME += {{"docid", answers[i][j].first},
@@ -101,8 +100,11 @@ void putAnswers(std::vector<std::vector<std::pair<int, float>>> answers)
 int main() {
 
 
-//    std::vector<std::vector<std::pair<int, float>>> answers= setAnswer();
-//    putAnswers(answers);
+    std::vector<std::vector<std::pair<int, float>>> answers= setAnswer();
+    putAnswers(answers);
+    int aaa = GetResponsesLimit();
+    std::cout<<aaa<<std::endl;
+    std::vector<std::string>qqq= GetTextDocuments();
     std::vector<std::string>sss= GetRequests();
     for(auto& a:sss)
     {

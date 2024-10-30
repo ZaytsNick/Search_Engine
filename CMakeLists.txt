@@ -28,6 +28,11 @@ set(gtest_disable_pthreads on)
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 enable_testing()
-target_link_libraries(search_engine PRIVATE gtest_main)
+# Исполняемый файл для тестов
+#add_executable(search_engine_tests test_main.cpp)  # Замените на ваш файл с тестами
+#target_link_libraries(search_engine_tests PRIVATE nlohmann_json::nlohmann_json gtest gtest_main)
+target_link_libraries(search_engine PRIVATE nlohmann_json::nlohmann_json gtest gtest_main)
 include(GoogleTest)
 gtest_discover_tests(search_engine)
+
+#add_test(NAME RunMainExecutable COMMAND search_engine)
