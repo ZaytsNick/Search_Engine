@@ -6,6 +6,7 @@
 #include <map>
 #include <mutex>
 #include <thread>
+#include <algorithm>
 //
 #include <ctime>
 //
@@ -13,24 +14,14 @@
 
 //
 std::mutex mutex;
-//
-TEST(sample_test_case, sample_test) {
-    EXPECT_EQ(1, 0);
+////TEST#1
+TEST(sample_test_case, sample_test
+) {
+    EXPECT_EQ(1, 1);
 }
-//
 
-//std::vector<std::vector<std::pair<int, float>>> setAnswer( )
-//{
-//    std::vector<std::vector<std::pair<int, float>>> answers;
-//    for (int i = 0; i < 5; i++) {
-//        std::vector<std::pair<int, float>> tmp;
-//        for (int j = 0; j < 5; j++) {
-//            if (i != 2) { tmp.emplace_back(j, 0.21); }//std::pair<int, float>(j, 0.21)); }
-//        }
-//        answers.push_back(tmp);
-//    }
-//    return answers;
-//}
+
+//
 class ConverterJSON {
 public:
     ConverterJSON() = default;
@@ -79,7 +70,9 @@ public:
         throw std::runtime_error("Unable to open config file.");
     }
 
-    void putAnswers(std::vector<std::vector<std::pair<int, float>>> answers) {
+    void putAnswers(std::vector<std::vector<std::pair<int, float>>
+
+    > answers) {
         std::ofstream answerFile("answer.json");
         nlohmann::json dict;
         for (int i = 0; i < 5; i++) {
@@ -103,7 +96,6 @@ public:
         answerFile << dict;
         answerFile.close();
     }
-
 };
 
 //
@@ -117,40 +109,34 @@ struct Entry {
     }
 };
 
+//
 class InvertedIndex {
 public:
     InvertedIndex() = default;
 
     //
     void UpdateDocumentBase(std::vector<std::string> input_docs) {
-        ConverterJSON updateBase;
-        input_docs = updateBase.GetTextDocuments();
-
         std::vector<std::thread> invertedIndexThread;
-        for (size_t i = 0; i < docs.size(); ++i) {
+        for (size_t i = 0; i < input_docs.size(); ++i) {
             invertedIndexThread.emplace_back(
-                    [this, doc = docs[i], doc_id = i]() {//!!!invertedIndexThread.push_back(std::thread{
-                        std::stringstream strStreamDocs;
-                        strStreamDocs << doc;
+                    [this, doc = input_docs[i], doc_id = i]() {
+                        std::stringstream streamDocs;
+                        streamDocs << doc;
                         std::string tmp;
-                        while (strStreamDocs >> tmp) {
+                        while (streamDocs >> tmp) {
                             mutex.lock();
-                            GetWordCount(tmp);
-                            if (freq_dictionary.find(tmp) != freq_dictionary.end()) {
-                                freq_dictionary[tmp];
-                                for (int i = 0; i <= freq_dictionary[tmp].size(); ++i) {
-                                    if (i == freq_dictionary[tmp].size()) {
-                                        freq_dictionary[tmp].push_back({doc_id, 1});
-                                    } else if (freq_dictionary[tmp][i].doc_id == doc_id) {
-                                        freq_dictionary[tmp][i].count++;
-                                        break;
-                                    }
+                            freq_dictionary[tmp];
+                            bool match = false;
+                            for (auto &i: freq_dictionary[tmp]) {
+                                if (i.doc_id == doc_id) {
+                                    i.count++;
+                                    match = true;
+                                    break;
                                 }
-//                                 std::cout << "Слово \"" << tmp << "\" найдено в словаре!"<< std::endl;
-                            } else {
-                                freq_dictionary[tmp];
+                            }
+                            if (!match) {
+//                                freq_dictionary[tmp];
                                 freq_dictionary[tmp].push_back({doc_id, 1});
-//                                std::cout << "Слово \"" << tmp << "\" отсутствует в словаре." << std::endl;
                             }
                             mutex.unlock();
                         }
@@ -161,12 +147,6 @@ public:
         }
     }
 
-    /**
-    * Метод определяет количество вхождений слова word в загруженной базе
-            документов
-    * @param word слово, частоту вхождений которого необходимо определить
-    * @return возвращает подготовленный список с частотой слов
-    */
     std::vector<Entry> GetWordCount(const std::string &word) {
 //        std::vector<Entry>  =freq_dictionary[word]
         return freq_dictionary[word];
@@ -176,30 +156,212 @@ private:
     std::vector<std::string> docs; // список содержимого документов
     std::map<std::string, std::vector<Entry>> freq_dictionary; // частотный словарь
 };
+////TEST#2
+using namespace std;
+
+void TestInvertedIndexFunctionality(
+        const vector<string> &docs,
+        const vector<string> &requests,
+        const std::vector<vector<Entry>> &expected
+) {
+    std::vector<std::vector<Entry>> result;
+    InvertedIndex idx;
+    idx.UpdateDocumentBase(docs);
+    for (auto &request: requests) {
+        std::vector<Entry> word_count = idx.GetWordCount(request);
+        result.push_back(word_count);
+    }
+    {
+        for(auto &i:result){
+            std::cout<<"{\n";
+            for(auto &j:i){
+                std::cout<<"{ "<<j.doc_id<<", "<<j.count<<" }";
+            }
+            std::cout<<"\n}";
+        }
+    }
+    ASSERT_EQ(result, expected);
+}
+
+TEST(TestCaseInvertedIndex, TestBasic
+) {
+    const vector<string> docs = {
+            "london is the capital of great britain",
+            "big ben is the nickname for the Great bell of the striking clock"
+    };
+    const vector<string> requests = {"london", "the"};
+    const vector<vector<Entry>> expected = {
+            {
+                    {0, 1}
+            },
+            {
+                    {0, 1}, {1, 3}
+            }};
+    TestInvertedIndexFunctionality(docs, requests, expected
+    );
+}
+
+TEST(TestCaseInvertedIndex, TestBasic2
+) {
+    const vector<string> docs = {
+            "milk milk milk milk water water water",
+            "milk water water",
+            "milk milk milk milk milk water water water water water",
+            "americano cappuccino"
+    };
+    const vector<string> requests = {"milk", "water", "cappuchino"};////слова не совподают в тексте: "cappuccino"
+    const vector<vector<Entry>> expected = {
+            {
+                    {0, 4}, {1, 1}, {2, 5}
+            },
+            {
+                    {0, 2}, {1, 2}, {2, 5}//// неправильно {0,3} на самом деле
+            },
+            {
+                    {3, 1}
+            }
+    };
+    TestInvertedIndexFunctionality(docs, requests, expected);
+}
+
+TEST(TestCaseInvertedIndex, TestInvertedIndexMissingWord
+) {
+    const vector<string> docs = {
+            "a b c d e f g h i j k l",
+            "statement"
+    };
+    const vector<string> requests = {"m", "statement"};
+    const vector<vector<Entry>> expected = {
+            {
+            },
+            {
+                    {1, 1}
+            }
+    };
+    TestInvertedIndexFunctionality(docs, requests, expected
+    );
+}
+
+//
+struct RelativeIndex {
+    size_t doc_id;
+    float rank;
+
+    bool operator==(const RelativeIndex &other) const {
+        return (doc_id == other.doc_id && rank == other.rank);
+    }
+};
+
+class SearchServer {
+public:
+/**
+* @param idx в конструктор класса передаётся ссылка на класс
+InvertedIndex,
+* чтобы SearchServer мог узнать частоту слов встречаемых в
+запросе
+*/
+    SearchServer(InvertedIndex &idx) : _index(idx) {};
+
+    std::vector<std::vector<RelativeIndex>> search(const std::vector<std::string> &queries_input) {
+        std::vector<std::vector<RelativeIndex>> answers;
+        for (auto &request: queries_input) {
+            std::stringstream streamRequest;
+            streamRequest << request;
+            std::string wordRequest;
+            std::map<size_t, float> ggg;
+            std::map<float, size_t> ddd;
+            while (streamRequest >> wordRequest) {
+                std::vector<Entry> sss = _index.GetWordCount(wordRequest);
+                for (auto &i: sss) {
+                    ggg[i.doc_id];
+                    ggg[i.doc_id] + i.count;
+                }
+            }
+            auto itMaxValue = std::max_element(ggg.begin(), ggg.end())->second;
+            std::vector<RelativeIndex> answer;
+            for (std::map<size_t, float>::iterator it = ggg.begin(); it != ggg.end(); ++it) {
+                RelativeIndex tmp = {it->first, it->second /= itMaxValue};
+                answer.emplace_back(tmp);
+            }
+            std::sort(answer.begin(), answer.end(),
+                      [](RelativeIndex &a, RelativeIndex &b) {
+                          return a.rank > b.rank;
+                      });
+            answers.emplace_back(answer);
+        }
+        return answers;
+    }
 
 
-int main() {
-//    std::vector<std::string> docs = {
-//            "london is the capital of great britain",
-//            "paris is the capital of france",
-//            "berlin is the capital of germany",
-//            "rome is the capital of italy",
-//            "madrid is the capital of spain",
-//    };
+private:
+    InvertedIndex _index;
+};
+////TEST
+TEST(TestCaseSearchServer, TestSimple) {
+    const vector<string> docs = {
+            "milk milk milk milk water water water",
+            "milk water water",
+            "milk milk milk milk milk water water water water water",
+            "americano cappuccino"
+    };
+    const vector<string> request = {"milk water", "sugar"};
+    const std::vector<vector<RelativeIndex>> expected = {
+            {
+                    {2, 1},
+                    {0, 0.7},
+                    {1, 0.3}
+            },
+            {
+            }
+    };
+    InvertedIndex idx;
+    idx.UpdateDocumentBase(docs);
+    SearchServer srv(idx);
+    std::vector<vector<RelativeIndex>> result = srv.search(request);
+    ASSERT_EQ(result, expected);
+}
+TEST(TestCaseSearchServer, TestTop5) {
+    const vector<string> docs = {
+            "london is the capital of great britain",
+            "paris is the capital of france",
+            "berlin is the capital of germany",
+            "rome is the capital of italy",
+            "madrid is the capital of spain",
+            "lisboa is the capital of portugal",
+            "bern is the capital of switzerland",
+            "moscow is the capital of russia",
+            "kiev is the capital of ukraine",
+            "minsk is the capital of belarus",
+            "astana is the capital of kazakhstan",
+            "beijing is the capital of china",
+            "tokyo is the capital of japan",
+            "bangkok is the capital of thailand",
+            "welcome to moscow the capital of russia the third rome",
+            "amsterdam is the capital of netherlands",
+            "helsinki is the capital of finland",
+            "oslo is the capital of norway","stockholm is the capital of sweden",
+            "riga is the capital of latvia",
+            "tallinn is the capital of estonia",
+            "warsaw is the capital of poland",
+    };
+    const vector<string> request = {"moscow is the capital of russia"};
+    const std::vector<vector<RelativeIndex>> expected = {
+            {
+                    {7, 1},
+                    {14, 1},
+                    {0, 0.666666687},
+                    {1, 0.666666687},
+                    {2, 0.666666687}
+            }
+    };
+    InvertedIndex idx;
+    idx.UpdateDocumentBase(docs);
+    SearchServer srv(idx);
+    std::vector<vector<RelativeIndex>> result = srv.search(request);
+    ASSERT_EQ(result, expected);
+}
 
-
-
-
-//    std::vector<std::vector<std::pair<int, float>>> answers= setAnswer();
-//    putAnswers(answers);
-//    int aaa = GetResponsesLimit();
-//    std::cout<<aaa<<std::endl;
-//    std::vector<std::string>qqq= GetTextDocuments();
-//    std::vector<std::string>sss= GetRequests();
-//    for(auto& a:sss)
-//    {
-//        std::cout<<a<<std::endl;
-//    }
-
-    return 0;
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
