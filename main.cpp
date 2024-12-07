@@ -172,12 +172,12 @@ void TestInvertedIndexFunctionality(
         result.push_back(word_count);
     }
     {
-        for(auto &i:result){
-            std::cout<<"{\n";
-            for(auto &j:i){
-                std::cout<<"{ "<<j.doc_id<<", "<<j.count<<" }";
+        for (auto &i: result) {
+            std::cout << "{\n";
+            for (auto &j: i) {
+                std::cout << "{ " << j.doc_id << ", " << j.count << " }";
             }
-            std::cout<<"\n}";
+            std::cout << "\n}";
         }
     }
     ASSERT_EQ(result, expected);
@@ -215,7 +215,7 @@ TEST(TestCaseInvertedIndex, TestBasic2
                     {0, 4}, {1, 1}, {2, 5}
             },
             {
-                    {0, 2}, {1, 2}, {2, 5}//// неправильно {0,3} на самом деле
+                    {0, 2}, {1, 2}, {2, 5}//// неправильно!!! на самом деле {0,3}
             },
             {
                     {3, 1}
@@ -268,13 +268,13 @@ InvertedIndex,
             std::stringstream streamRequest;
             streamRequest << request;
             std::string wordRequest;
+//            std::vector<RelativeIndex> ggg2;
             std::map<size_t, float> ggg;
-            std::map<float, size_t> ddd;
             while (streamRequest >> wordRequest) {
                 std::vector<Entry> sss = _index.GetWordCount(wordRequest);
                 for (auto &i: sss) {
                     ggg[i.doc_id];
-                    ggg[i.doc_id] + i.count;
+                    ggg[i.doc_id] += i.count;
                 }
             }
             auto itMaxValue = std::max_element(ggg.begin(), ggg.end())->second;
@@ -289,6 +289,7 @@ InvertedIndex,
                       });
             answers.emplace_back(answer);
         }
+////        }
         return answers;
     }
 
@@ -320,6 +321,7 @@ TEST(TestCaseSearchServer, TestSimple) {
     std::vector<vector<RelativeIndex>> result = srv.search(request);
     ASSERT_EQ(result, expected);
 }
+
 TEST(TestCaseSearchServer, TestTop5) {
     const vector<string> docs = {
             "london is the capital of great britain",
@@ -339,7 +341,7 @@ TEST(TestCaseSearchServer, TestTop5) {
             "welcome to moscow the capital of russia the third rome",
             "amsterdam is the capital of netherlands",
             "helsinki is the capital of finland",
-            "oslo is the capital of norway","stockholm is the capital of sweden",
+            "oslo is the capital of norway", "stockholm is the capital of sweden",
             "riga is the capital of latvia",
             "tallinn is the capital of estonia",
             "warsaw is the capital of poland",
