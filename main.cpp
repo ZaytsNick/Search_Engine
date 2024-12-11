@@ -11,7 +11,6 @@
 #include <ctime>
 //
 #include "gtest/gtest.h"
-
 //
 std::mutex mutex;
 ////TEST#1
@@ -19,8 +18,6 @@ TEST(sample_test_case, sample_test
 ) {
     EXPECT_EQ(1, 1);
 }
-
-
 //
 class ConverterJSON {
 public:
@@ -47,8 +44,11 @@ public:
         if (configFile.is_open()) {
             nlohmann::json dict;
             configFile >> dict;
-            if (dict.contains("max_responses")) {
-                return dict["max_responses"];
+//            if (dict.contains("max_responses")) {
+//                return dict["max_responses"];
+//            }
+            if (dict.contains("config") && dict["config"].contains("max_responses")) {
+                return dict["config"]["max_responses"];
             }
         }
         throw std::runtime_error("Unable to open config file.");
@@ -70,9 +70,7 @@ public:
         throw std::runtime_error("Unable to open config file.");
     }
 
-    void putAnswers(std::vector<std::vector<std::pair<int, float>>
-
-    > answers) {
+    void putAnswers(std::vector<std::vector<std::pair<int, float>>> answers) {
         std::ofstream answerFile("answer.json");
         nlohmann::json dict;
         for (int i = 0; i < 5; i++) {
@@ -102,7 +100,6 @@ public:
 struct Entry {
     size_t doc_id, count;
 
-    // Данный оператор необходим для проведения тестовых сценариев
     bool operator==(const Entry &other) const {
         return (doc_id == other.doc_id &&
                 count == other.count);
@@ -113,7 +110,6 @@ struct Entry {
 class InvertedIndex {
 public:
     InvertedIndex() = default;
-
     //
     void UpdateDocumentBase(std::vector<std::string> input_docs) {
         std::vector<std::thread> invertedIndexThread;
@@ -146,15 +142,13 @@ public:
             thread.join();
         }
     }
-
     std::vector<Entry> GetWordCount(const std::string &word) {
-//        std::vector<Entry>  =freq_dictionary[word]
         return freq_dictionary[word];
     }
 
 private:
-    std::vector<std::string> docs; // список содержимого документов
-    std::map<std::string, std::vector<Entry>> freq_dictionary; // частотный словарь
+    std::vector<std::string> docs;
+    std::map<std::string, std::vector<Entry>> freq_dictionary;
 };
 ////TEST#2
 using namespace std;
@@ -254,12 +248,6 @@ struct RelativeIndex {
 
 class SearchServer {
 public:
-/**
-* @param idx в конструктор класса передаётся ссылка на класс
-InvertedIndex,
-* чтобы SearchServer мог узнать частоту слов встречаемых в
-запросе
-*/
     SearchServer(InvertedIndex &idx) : _index(idx) {};
 
     std::vector<std::vector<RelativeIndex>> search(const std::vector<std::string> &queries_input) {
@@ -268,25 +256,35 @@ InvertedIndex,
             std::stringstream streamRequest;
             streamRequest << request;
             std::string wordRequest;
-//            std::vector<RelativeIndex> ggg2;
-            std::map<size_t, float> ggg;
+            std::map<size_t, float> answerMap;
             while (streamRequest >> wordRequest) {
                 std::vector<Entry> sss = _index.GetWordCount(wordRequest);
                 for (auto &i: sss) {
-                    ggg[i.doc_id];
-                    ggg[i.doc_id] += i.count;
+                    answerMap[i.doc_id];
+                    answerMap[i.doc_id] += i.count;
                 }
             }
-            auto itMaxValue = std::max_element(ggg.begin(), ggg.end())->second;
+            auto itMaxValue = std::max_element(
+                    answerMap.begin(),
+                    answerMap.end(),
+                    [](const auto &a, const auto &b) {
+                        return a.second < b.second;
+                    }
+            )->second;
             std::vector<RelativeIndex> answer;
-            for (std::map<size_t, float>::iterator it = ggg.begin(); it != ggg.end(); ++it) {
+
+            for (std::map<size_t, float>::iterator it = answerMap.begin(); it != answerMap.end(); ++it) {
                 RelativeIndex tmp = {it->first, it->second /= itMaxValue};
                 answer.emplace_back(tmp);
             }
-            std::sort(answer.begin(), answer.end(),
-                      [](RelativeIndex &a, RelativeIndex &b) {
-                          return a.rank > b.rank;
-                      });
+            std::stable_sort(answer.begin(), answer.end(),
+                             [](RelativeIndex a, RelativeIndex b) {
+                                 return a.rank > b.rank;
+                             });
+            int responsesLimit = std::make_unique<ConverterJSON>()->GetResponsesLimit();
+            if (answer.size() > responsesLimit) {
+                answer.erase(answer.begin() + responsesLimit, answer.end());
+            }
             answers.emplace_back(answer);
         }
 ////        }
