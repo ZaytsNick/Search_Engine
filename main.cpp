@@ -7,13 +7,9 @@
 #include <mutex>
 #include <thread>
 #include <algorithm>
-//
 #include <ctime>
-//
 #include "gtest/gtest.h"
-//
 std::mutex mutex;
-////TEST#1
 TEST(sample_test_case, sample_test
 ) {
     EXPECT_EQ(1, 1);
@@ -44,9 +40,6 @@ public:
         if (configFile.is_open()) {
             nlohmann::json dict;
             configFile >> dict;
-//            if (dict.contains("max_responses")) {
-//                return dict["max_responses"];
-//            }
             if (dict.contains("config") && dict["config"].contains("max_responses")) {
                 return dict["config"]["max_responses"];
             }
@@ -78,7 +71,7 @@ public:
             std::ostringstream tmp;
             tmp << "request" << std::setw(3) << std::setfill('0') << i + 1;
             std::string requestId = tmp.str();
-            if (!answers.empty() /*answers[i].size() != 0*/) {
+            if (!answers.empty()) {
                 nlohmann::json ansRENAME;
                 for (int j = 0; j < 5; j++) {
                     ansRENAME += {{"docid", answers[i][j].first},
@@ -131,7 +124,6 @@ public:
                                 }
                             }
                             if (!match) {
-//                                freq_dictionary[tmp];
                                 freq_dictionary[tmp].push_back({doc_id, 1});
                             }
                             mutex.unlock();
@@ -150,7 +142,6 @@ private:
     std::vector<std::string> docs;
     std::map<std::string, std::vector<Entry>> freq_dictionary;
 };
-////TEST#2
 using namespace std;
 
 void TestInvertedIndexFunctionality(
@@ -165,15 +156,7 @@ void TestInvertedIndexFunctionality(
         std::vector<Entry> word_count = idx.GetWordCount(request);
         result.push_back(word_count);
     }
-    {
-        for (auto &i: result) {
-            std::cout << "{\n";
-            for (auto &j: i) {
-                std::cout << "{ " << j.doc_id << ", " << j.count << " }";
-            }
-            std::cout << "\n}";
-        }
-    }
+
     ASSERT_EQ(result, expected);
 }
 
@@ -203,13 +186,13 @@ TEST(TestCaseInvertedIndex, TestBasic2
             "milk milk milk milk milk water water water water water",
             "americano cappuccino"
     };
-    const vector<string> requests = {"milk", "water", "cappuchino"};////слова не совподают в тексте: "cappuccino"
+    const vector<string> requests = {"milk", "water", "cappuccino"};
     const vector<vector<Entry>> expected = {
             {
                     {0, 4}, {1, 1}, {2, 5}
             },
             {
-                    {0, 2}, {1, 2}, {2, 5}//// неправильно!!! на самом деле {0,3}
+                    {0, 3}, {1, 2}, {2, 5}
             },
             {
                     {3, 1}
