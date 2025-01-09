@@ -9,11 +9,12 @@
 #include <algorithm>
 #include <ctime>
 #include "gtest/gtest.h"
+
 std::mutex mutex;
-TEST(sample_test_case, sample_test
-) {
+TEST(sample_test_case, sample_test) {
     EXPECT_EQ(1, 1);
 }
+
 //
 class ConverterJSON {
 public:
@@ -30,9 +31,10 @@ public:
                     tmp.push_back(file.get<std::string>());
                 }
             }
+            std::cout<<"GetTextDocuments 1";
             return tmp;
         }
-        throw std::runtime_error("Unable to open config file.");
+        throw std::runtime_error("Unable to open config.json");
     }
 
     int GetResponsesLimit() {
@@ -44,7 +46,7 @@ public:
                 return dict["config"]["max_responses"];
             }
         }
-        throw std::runtime_error("Unable to open config file.");
+        throw std::runtime_error("Unable to open config.json");
     }
 
     std::vector<std::string> GetRequests() {
@@ -58,6 +60,8 @@ public:
                     tmp.push_back(file.get<std::string>());
                 }
             }
+
+            std::cout<<"GetRequests 1";
             return tmp;
         }
         throw std::runtime_error("Unable to open config file.");
@@ -103,6 +107,7 @@ struct Entry {
 class InvertedIndex {
 public:
     InvertedIndex() = default;
+
     //
     void UpdateDocumentBase(std::vector<std::string> input_docs) {
         std::vector<std::thread> invertedIndexThread;
@@ -113,7 +118,8 @@ public:
                         streamDocs << doc;
                         std::string tmp;
                         while (streamDocs >> tmp) {
-                            mutex.lock();
+//                            mutex.lock();
+                            std::lock_guard<std::mutex> lock(mutex);
                             freq_dictionary[tmp];
                             bool match = false;
                             for (auto &i: freq_dictionary[tmp]) {
@@ -126,14 +132,17 @@ public:
                             if (!match) {
                                 freq_dictionary[tmp].push_back({doc_id, 1});
                             }
-                            mutex.unlock();
+//                            mutex.unlock();
                         }
                     });
         }
         for (auto &thread: invertedIndexThread) {
             thread.join();
         }
+
+        std::cout<<"UpdateDocumentBase 1";
     }
+
     std::vector<Entry> GetWordCount(const std::string &word) {
         return freq_dictionary[word];
     }
@@ -142,6 +151,7 @@ private:
     std::vector<std::string> docs;
     std::map<std::string, std::vector<Entry>> freq_dictionary;
 };
+
 using namespace std;
 
 void TestInvertedIndexFunctionality(
@@ -160,8 +170,7 @@ void TestInvertedIndexFunctionality(
     ASSERT_EQ(result, expected);
 }
 
-TEST(TestCaseInvertedIndex, TestBasic
-) {
+TEST(TestCaseInvertedIndex, TestBasic) {
     const vector<string> docs = {
             "london is the capital of great britain",
             "big ben is the nickname for the Great bell of the striking clock"
@@ -178,8 +187,7 @@ TEST(TestCaseInvertedIndex, TestBasic
     );
 }
 
-TEST(TestCaseInvertedIndex, TestBasic2
-) {
+TEST(TestCaseInvertedIndex, TestBasic2) {
     const vector<string> docs = {
             "milk milk milk milk water water water",
             "milk water water",
@@ -201,8 +209,7 @@ TEST(TestCaseInvertedIndex, TestBasic2
     TestInvertedIndexFunctionality(docs, requests, expected);
 }
 
-TEST(TestCaseInvertedIndex, TestInvertedIndexMissingWord
-) {
+TEST(TestCaseInvertedIndex, TestInvertedIndexMissingWord) {
     const vector<string> docs = {
             "a b c d e f g h i j k l",
             "statement"
@@ -270,10 +277,9 @@ public:
             }
             answers.emplace_back(answer);
         }
-////        }
+        std::cout<<"search 1";
         return answers;
     }
-
 
 private:
     InvertedIndex _index;
@@ -322,7 +328,8 @@ TEST(TestCaseSearchServer, TestTop5) {
             "welcome to moscow the capital of russia the third rome",
             "amsterdam is the capital of netherlands",
             "helsinki is the capital of finland",
-            "oslo is the capital of norway", "stockholm is the capital of sweden",
+            "oslo is the capital of norway",
+            "stockholm is the capital of sweden",
             "riga is the capital of latvia",
             "tallinn is the capital of estonia",
             "warsaw is the capital of poland",
@@ -344,7 +351,62 @@ TEST(TestCaseSearchServer, TestTop5) {
     ASSERT_EQ(result, expected);
 }
 
+bool checkingTheForStartup() {
+    std::ifstream configFile("config.json");
+    std::ifstream requestsFile("requests.json");
+    if (configFile.is_open()) {
+        nlohmann::json dict;
+        configFile >> dict;
+        if (dict.contains("files") && dict.contains("config") && dict["config"].contains("name")
+            && dict["config"].contains("version")
+            && dict["config"].contains("max_responses")) {
+            if (requestsFile.is_open()) {
+                return true;
+            }
+        } else { throw std::runtime_error("Config file is missing required keys"); }
+    } else { throw std::runtime_error("Unable to open config.json"); }
+}
+std::pair<int, float> convertToPair(const RelativeIndex& index) {
+    return {static_cast<int>(index.doc_id), index.rank};
+}
+std::vector<std::vector<std::pair<int, float>>> convertAnswers(
+        const std::vector<std::vector<RelativeIndex>>& originalAnswers) {
+    std::vector<std::vector<std::pair<int, float>>> convertedAnswers;
+    for (const auto& row : originalAnswers) {
+        std::vector<std::pair<int, float>> convertedRow;
+        for (const auto& item : row) {
+            convertedRow.push_back(convertToPair(item));
+        }
+        convertedAnswers.push_back(convertedRow);
+    }
+    return convertedAnswers;
+}
+void sabla()
+{
+    checkingTheForStartup();
+    // Создаем уникальные экземпляры объектов
+    auto converter = std::make_unique<ConverterJSON>();
+    auto invertedIndex=std::make_unique<InvertedIndex>();
+    invertedIndex->UpdateDocumentBase(converter->GetTextDocuments());
+    auto searchServer = std::make_unique<SearchServer>(*std::move(invertedIndex));
+    std::vector<std::string> requests = converter->GetRequests();
+    auto answers = searchServer->search(requests);
+    converter->putAnswers(convertAnswers(answers));}
+
 int main(int argc, char **argv) {
+
     ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    int test_result = RUN_ALL_TESTS();
+    ////код программы
+    std::cout<<"test good";
+    sabla();
+    return test_result;
+
+
+    if (test_result != 0) {
+        std::cerr << "Тесты не прошли с кодом: " << test_result << std::endl;
+        return test_result; // Если тесты не прошли, прекращаем выполнение программы
+    }
+
+
 }

@@ -5,10 +5,10 @@
     "max_responses": 5
   },
   "files": [
-    "../resources/file001.txt",
-    "../resources/file002.txt",
-    "../resources/file003.txt",
-    "../resources/file004.txt",
-    "../resources/file005.txt"
+    "C:/resources/file001.txt",
+    "C:/resources/file002.txt",
+    "C:/resources/file003.txt",
+    "C:/resources/file004.txt",
+    "C:/resources/file005.txt"
   ]
 }
