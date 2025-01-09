@@ -5,3 +5,5 @@ answers.json
 /.idea/*
 /.idea
 /build
+#config.json
+#requests.json
