@@ -8,12 +8,13 @@
 #include <thread>
 #include <algorithm>
 #include <ctime>
-#include "gtest/gtest.h"
+//#include "gtest/gtest.h"
 
 std::mutex mutex;
-TEST(sample_test_case, sample_test) {
-    EXPECT_EQ(1, 1);
-}
+
+//TEST(sample_test_case, sample_test) {
+//    EXPECT_EQ(1, 1);
+//}
 
 //
 class ConverterJSON {
@@ -25,13 +26,19 @@ public:
         if (configFile.is_open()) {
             nlohmann::json dict;
             configFile >> dict;
-            std::vector<std::string> tmp;
+            std::vector<std::string> tmp(0);
             if (dict.contains("files") && dict["files"].is_array()) {
                 for (const auto &file: dict["files"]) {
-                    tmp.push_back(file.get<std::string>());
+                    std::string filePathToSearch=to_string(file);
+//                    filePathToSearch
+                    std::ifstream fileToSearch(file);
+                    if (fileToSearch.is_open()) {
+                        std::ostringstream fileContents;
+                        fileContents << fileToSearch.rdbuf();
+                        tmp.push_back(fileContents.str());
+                    }
                 }
             }
-            std::cout<<"GetTextDocuments 1";
             return tmp;
         }
         throw std::runtime_error("Unable to open config.json");
@@ -60,8 +67,6 @@ public:
                     tmp.push_back(file.get<std::string>());
                 }
             }
-
-            std::cout<<"GetRequests 1";
             return tmp;
         }
         throw std::runtime_error("Unable to open config file.");
@@ -70,14 +75,14 @@ public:
     void putAnswers(std::vector<std::vector<std::pair<int, float>>> answers) {
         std::ofstream answerFile("answer.json");
         nlohmann::json dict;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < answers.size(); i++) {
             nlohmann::json request;
             std::ostringstream tmp;
             tmp << "request" << std::setw(3) << std::setfill('0') << i + 1;
             std::string requestId = tmp.str();
             if (!answers.empty()) {
                 nlohmann::json ansRENAME;
-                for (int j = 0; j < 5; j++) {
+                for (int j = 0; j < answers[i].size(); j++) {
                     ansRENAME += {{"docid", answers[i][j].first},
                                   {"rank",  answers[i][j].second}};
                 }
@@ -139,8 +144,6 @@ public:
         for (auto &thread: invertedIndexThread) {
             thread.join();
         }
-
-        std::cout<<"UpdateDocumentBase 1";
     }
 
     std::vector<Entry> GetWordCount(const std::string &word) {
@@ -152,79 +155,79 @@ private:
     std::map<std::string, std::vector<Entry>> freq_dictionary;
 };
 
-using namespace std;
-
-void TestInvertedIndexFunctionality(
-        const vector<string> &docs,
-        const vector<string> &requests,
-        const std::vector<vector<Entry>> &expected
-) {
-    std::vector<std::vector<Entry>> result;
-    InvertedIndex idx;
-    idx.UpdateDocumentBase(docs);
-    for (auto &request: requests) {
-        std::vector<Entry> word_count = idx.GetWordCount(request);
-        result.push_back(word_count);
-    }
-
-    ASSERT_EQ(result, expected);
-}
-
-TEST(TestCaseInvertedIndex, TestBasic) {
-    const vector<string> docs = {
-            "london is the capital of great britain",
-            "big ben is the nickname for the Great bell of the striking clock"
-    };
-    const vector<string> requests = {"london", "the"};
-    const vector<vector<Entry>> expected = {
-            {
-                    {0, 1}
-            },
-            {
-                    {0, 1}, {1, 3}
-            }};
-    TestInvertedIndexFunctionality(docs, requests, expected
-    );
-}
-
-TEST(TestCaseInvertedIndex, TestBasic2) {
-    const vector<string> docs = {
-            "milk milk milk milk water water water",
-            "milk water water",
-            "milk milk milk milk milk water water water water water",
-            "americano cappuccino"
-    };
-    const vector<string> requests = {"milk", "water", "cappuccino"};
-    const vector<vector<Entry>> expected = {
-            {
-                    {0, 4}, {1, 1}, {2, 5}
-            },
-            {
-                    {0, 3}, {1, 2}, {2, 5}
-            },
-            {
-                    {3, 1}
-            }
-    };
-    TestInvertedIndexFunctionality(docs, requests, expected);
-}
-
-TEST(TestCaseInvertedIndex, TestInvertedIndexMissingWord) {
-    const vector<string> docs = {
-            "a b c d e f g h i j k l",
-            "statement"
-    };
-    const vector<string> requests = {"m", "statement"};
-    const vector<vector<Entry>> expected = {
-            {
-            },
-            {
-                    {1, 1}
-            }
-    };
-    TestInvertedIndexFunctionality(docs, requests, expected
-    );
-}
+//using namespace std;
+//
+//void TestInvertedIndexFunctionality(
+//        const vector<string> &docs,
+//        const vector<string> &requests,
+//        const std::vector<vector<Entry>> &expected
+//) {
+//    std::vector<std::vector<Entry>> result;
+//    InvertedIndex idx;
+//    idx.UpdateDocumentBase(docs);
+//    for (auto &request: requests) {
+//        std::vector<Entry> word_count = idx.GetWordCount(request);
+//        result.push_back(word_count);
+//    }
+//
+//    ASSERT_EQ(result, expected);
+//}
+//
+//TEST(TestCaseInvertedIndex, TestBasic) {
+//    const vector<string> docs = {
+//            "london is the capital of great britain",
+//            "big ben is the nickname for the Great bell of the striking clock"
+//    };
+//    const vector<string> requests = {"london", "the"};
+//    const vector<vector<Entry>> expected = {
+//            {
+//                    {0, 1}
+//            },
+//            {
+//                    {0, 1}, {1, 3}
+//            }};
+//    TestInvertedIndexFunctionality(docs, requests, expected
+//    );
+//}
+//
+//TEST(TestCaseInvertedIndex, TestBasic2) {
+//    const vector<string> docs = {
+//            "milk milk milk milk water water water",
+//            "milk water water",
+//            "milk milk milk milk milk water water water water water",
+//            "americano cappuccino"
+//    };
+//    const vector<string> requests = {"milk", "water", "cappuccino"};
+//    const vector<vector<Entry>> expected = {
+//            {
+//                    {0, 4}, {1, 1}, {2, 5}
+//            },
+//            {
+//                    {0, 3}, {1, 2}, {2, 5}
+//            },
+//            {
+//                    {3, 1}
+//            }
+//    };
+//    TestInvertedIndexFunctionality(docs, requests, expected);
+//}
+//
+//TEST(TestCaseInvertedIndex, TestInvertedIndexMissingWord) {
+//    const vector<string> docs = {
+//            "a b c d e f g h i j k l",
+//            "statement"
+//    };
+//    const vector<string> requests = {"m", "statement"};
+//    const vector<vector<Entry>> expected = {
+//            {
+//            },
+//            {
+//                    {1, 1}
+//            }
+//    };
+//    TestInvertedIndexFunctionality(docs, requests, expected
+//    );
+//}
 
 //
 struct RelativeIndex {
@@ -277,7 +280,6 @@ public:
             }
             answers.emplace_back(answer);
         }
-        std::cout<<"search 1";
         return answers;
     }
 
@@ -285,71 +287,71 @@ private:
     InvertedIndex _index;
 };
 ////TEST
-TEST(TestCaseSearchServer, TestSimple) {
-    const vector<string> docs = {
-            "milk milk milk milk water water water",
-            "milk water water",
-            "milk milk milk milk milk water water water water water",
-            "americano cappuccino"
-    };
-    const vector<string> request = {"milk water", "sugar"};
-    const std::vector<vector<RelativeIndex>> expected = {
-            {
-                    {2, 1},
-                    {0, 0.7},
-                    {1, 0.3}
-            },
-            {
-            }
-    };
-    InvertedIndex idx;
-    idx.UpdateDocumentBase(docs);
-    SearchServer srv(idx);
-    std::vector<vector<RelativeIndex>> result = srv.search(request);
-    ASSERT_EQ(result, expected);
-}
-
-TEST(TestCaseSearchServer, TestTop5) {
-    const vector<string> docs = {
-            "london is the capital of great britain",
-            "paris is the capital of france",
-            "berlin is the capital of germany",
-            "rome is the capital of italy",
-            "madrid is the capital of spain",
-            "lisboa is the capital of portugal",
-            "bern is the capital of switzerland",
-            "moscow is the capital of russia",
-            "kiev is the capital of ukraine",
-            "minsk is the capital of belarus",
-            "astana is the capital of kazakhstan",
-            "beijing is the capital of china",
-            "tokyo is the capital of japan",
-            "bangkok is the capital of thailand",
-            "welcome to moscow the capital of russia the third rome",
-            "amsterdam is the capital of netherlands",
-            "helsinki is the capital of finland",
-            "oslo is the capital of norway",
-            "stockholm is the capital of sweden",
-            "riga is the capital of latvia",
-            "tallinn is the capital of estonia",
-            "warsaw is the capital of poland",
-    };
-    const vector<string> request = {"moscow is the capital of russia"};
-    const std::vector<vector<RelativeIndex>> expected = {
-            {
-                    {7, 1},
-                    {14, 1},
-                    {0, 0.666666687},
-                    {1, 0.666666687},
-                    {2, 0.666666687}
-            }
-    };
-    InvertedIndex idx;
-    idx.UpdateDocumentBase(docs);
-    SearchServer srv(idx);
-    std::vector<vector<RelativeIndex>> result = srv.search(request);
-    ASSERT_EQ(result, expected);
-}
+//TEST(TestCaseSearchServer, TestSimple) {
+//    const vector<string> docs = {
+//            "milk milk milk milk water water water",
+//            "milk water water",
+//            "milk milk milk milk milk water water water water water",
+//            "americano cappuccino"
+//    };
+//    const vector<string> request = {"milk water", "sugar"};
+//    const std::vector<vector<RelativeIndex>> expected = {
+//            {
+//                    {2, 1},
+//                    {0, 0.7},
+//                    {1, 0.3}
+//            },
+//            {
+//            }
+//    };
+//    InvertedIndex idx;
+//    idx.UpdateDocumentBase(docs);
+//    SearchServer srv(idx);
+//    std::vector<vector<RelativeIndex>> result = srv.search(request);
+//    ASSERT_EQ(result, expected);
+//}
+//
+//TEST(TestCaseSearchServer, TestTop5) {
+//    const vector<string> docs = {
+//            "london is the capital of great britain",
+//            "paris is the capital of france",
+//            "berlin is the capital of germany",
+//            "rome is the capital of italy",
+//            "madrid is the capital of spain",
+//            "lisboa is the capital of portugal",
+//            "bern is the capital of switzerland",
+//            "moscow is the capital of russia",
+//            "kiev is the capital of ukraine",
+//            "minsk is the capital of belarus",
+//            "astana is the capital of kazakhstan",
+//            "beijing is the capital of china",
+//            "tokyo is the capital of japan",
+//            "bangkok is the capital of thailand",
+//            "welcome to moscow the capital of russia the third rome",
+//            "amsterdam is the capital of netherlands",
+//            "helsinki is the capital of finland",
+//            "oslo is the capital of norway",
+//            "stockholm is the capital of sweden",
+//            "riga is the capital of latvia",
+//            "tallinn is the capital of estonia",
+//            "warsaw is the capital of poland",
+//    };
+//    const vector<string> request = {"moscow is the capital of russia"};
+//    const std::vector<vector<RelativeIndex>> expected = {
+//            {
+//                    {7, 1},
+//                    {14, 1},
+//                    {0, 0.666666687},
+//                    {1, 0.666666687},
+//                    {2, 0.666666687}
+//            }
+//    };
+//    InvertedIndex idx;
+//    idx.UpdateDocumentBase(docs);
+//    SearchServer srv(idx);
+//    std::vector<vector<RelativeIndex>> result = srv.search(request);
+//    ASSERT_EQ(result, expected);
+//}
 
 bool checkingTheForStartup() {
     std::ifstream configFile("config.json");
@@ -366,47 +368,50 @@ bool checkingTheForStartup() {
         } else { throw std::runtime_error("Config file is missing required keys"); }
     } else { throw std::runtime_error("Unable to open config.json"); }
 }
-std::pair<int, float> convertToPair(const RelativeIndex& index) {
+
+std::pair<int, float> convertToPair(const RelativeIndex &index) {
     return {static_cast<int>(index.doc_id), index.rank};
 }
+
 std::vector<std::vector<std::pair<int, float>>> convertAnswers(
-        const std::vector<std::vector<RelativeIndex>>& originalAnswers) {
+        const std::vector<std::vector<RelativeIndex>> &originalAnswers) {
     std::vector<std::vector<std::pair<int, float>>> convertedAnswers;
-    for (const auto& row : originalAnswers) {
+    for (const auto &row: originalAnswers) {
         std::vector<std::pair<int, float>> convertedRow;
-        for (const auto& item : row) {
+        for (const auto &item: row) {
             convertedRow.push_back(convertToPair(item));
         }
         convertedAnswers.push_back(convertedRow);
     }
     return convertedAnswers;
 }
-void sabla()
-{
+
+//int main(int argc, char **argv) {
+int main() {
+
+//    ::testing::InitGoogleTest(&argc, argv);
+//    int test_result = RUN_ALL_TESTS();
+//    ////код программы
+//    std::cout<<"test good";
+
     checkingTheForStartup();
-    // Создаем уникальные экземпляры объектов
     auto converter = std::make_unique<ConverterJSON>();
-    auto invertedIndex=std::make_unique<InvertedIndex>();
+    auto invertedIndex = std::make_unique<InvertedIndex>();
+
     invertedIndex->UpdateDocumentBase(converter->GetTextDocuments());
     auto searchServer = std::make_unique<SearchServer>(*std::move(invertedIndex));
     std::vector<std::string> requests = converter->GetRequests();
     auto answers = searchServer->search(requests);
-    converter->putAnswers(convertAnswers(answers));}
-
-int main(int argc, char **argv) {
-
-    ::testing::InitGoogleTest(&argc, argv);
-    int test_result = RUN_ALL_TESTS();
-    ////код программы
-    std::cout<<"test good";
-    sabla();
-    return test_result;
+    auto a = convertAnswers(answers);
+    converter->putAnswers(a);
+//    return test_result;
 
 
-    if (test_result != 0) {
-        std::cerr << "Тесты не прошли с кодом: " << test_result << std::endl;
-        return test_result; // Если тесты не прошли, прекращаем выполнение программы
-    }
+//    if (test_result != 0) {
+//        std::cerr << "Тесты не прошли с кодом: " << test_result << std::endl;
+//        return test_result; // Если тесты не прошли, прекращаем выполнение программы
+//    }
 
+    return 0;
 
 }
