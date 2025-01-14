@@ -1,5 +1,8 @@
-#include "gtest/gtest.h"
-#include "../main.cpp"
+#include <gtest/gtest.h>
+
+#include "ConverterJSON.h"
+#include "InvertedIndex.h"
+#include "SearchServer.h"
 //
 TEST(sample_test_case, sample_test) {
     EXPECT_EQ(1, 1);
@@ -143,7 +146,6 @@ TEST(TestCaseSearchServer, TestTop5) {
     std::vector<vector<RelativeIndex>> result = srv.search(request);
     ASSERT_EQ(result, expected);
 }
-
 
 
 int main(int argc, char **argv) {
