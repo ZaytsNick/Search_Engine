@@ -3,11 +3,11 @@
 #include "ConverterJSON.h"
 #include "InvertedIndex.h"
 #include "SearchServer.h"
-//
+
 TEST(sample_test_case, sample_test) {
     EXPECT_EQ(1, 1);
 }
-//
+
 using namespace std;
 
 void TestInvertedIndexFunctionality(
@@ -81,6 +81,7 @@ TEST(TestCaseInvertedIndex, TestInvertedIndexMissingWord) {
     TestInvertedIndexFunctionality(docs, requests, expected
     );
 }
+
 TEST(TestCaseSearchServer, TestSimple) {
     const vector<string> docs = {
             "milk milk milk milk water water water",
@@ -146,7 +147,6 @@ TEST(TestCaseSearchServer, TestTop5) {
     std::vector<vector<RelativeIndex>> result = srv.search(request);
     ASSERT_EQ(result, expected);
 }
-
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

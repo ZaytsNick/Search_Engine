@@ -9,10 +9,10 @@ std::vector<std::vector<RelativeIndex>> SearchServer::search(const std::vector<s
         std::string wordRequest;
         std::map<size_t, float> answerMap;
         while (streamRequest >> wordRequest) {
-            std::vector<Entry> sss = _index.GetWordCount(wordRequest);
-            for (auto &i: sss) {
-                answerMap[i.doc_id];
-                answerMap[i.doc_id] += i.count;
+            std::vector<Entry> answerVector = _index.GetWordCount(wordRequest);
+            for (auto &answerElement: answerVector) {
+                answerMap[answerElement.doc_id];
+                answerMap[answerElement.doc_id] += i.count;
             }
         }
         auto itMaxValue = std::max_element(
