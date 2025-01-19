@@ -12,7 +12,7 @@ std::vector<std::vector<RelativeIndex>> SearchServer::search(const std::vector<s
             std::vector<Entry> answerVector = _index.GetWordCount(wordRequest);
             for (auto &answerElement: answerVector) {
                 answerMap[answerElement.doc_id];
-                answerMap[answerElement.doc_id] += i.count;
+                answerMap[answerElement.doc_id] += answerElement.count;
             }
         }
         auto itMaxValue = std::max_element(

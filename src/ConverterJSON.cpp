@@ -1,7 +1,24 @@
 #include "ConverterJSON.h"
 #include "InvertedIndex.h"
 
+bool checkingTheForStartup() {
+    std::ifstream configFile("config.json");
+    std::ifstream requestsFile("requests.json");
+    if (configFile.is_open()) {
+        nlohmann::json dict;
+        configFile >> dict;
+        if (dict.contains("files") && dict.contains("config") && dict["config"].contains("name")
+            && dict["config"].contains("version")
+            && dict["config"].contains("max_responses")) {
+            if (requestsFile.is_open()) {
+                return true;
+            }
+        } else { throw std::runtime_error("Config file is missing required keys"); }
+    }else { throw std::runtime_error("Unable to open config.json"); }
+}
+
 std::vector<std::string> ConverterJSON::GetTextDocuments() {
+    checkingTheForStartup();
     std::ifstream configFile("config.json");
     if (configFile.is_open()) {
         nlohmann::json dict;
@@ -23,6 +40,7 @@ std::vector<std::string> ConverterJSON::GetTextDocuments() {
 }
 
 int ConverterJSON::GetResponsesLimit() {
+    checkingTheForStartup();
     std::ifstream configFile("config.json");
     if (configFile.is_open()) {
         nlohmann::json dict;
@@ -35,6 +53,7 @@ int ConverterJSON::GetResponsesLimit() {
 }
 
 std::vector<std::string> ConverterJSON::GetRequests() {
+    checkingTheForStartup();
     std::ifstream requestsFile("requests.json");
     if (requestsFile.is_open()) {
         nlohmann::json dict;
@@ -51,6 +70,7 @@ std::vector<std::string> ConverterJSON::GetRequests() {
 }
 
 void ConverterJSON::putAnswers(std::vector<std::vector<std::pair<int, float>>> answers) {
+    checkingTheForStartup();
     std::ofstream answerFile("answer.json");
     nlohmann::json dict;
     for (int i = 0; i < answers.size(); i++) {

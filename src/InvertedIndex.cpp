@@ -3,6 +3,8 @@
 std::mutex mutex;
 
 void InvertedIndex::UpdateDocumentBase(std::vector<std::string> input_docs) {
+    docs.erase(docs.begin(), docs.end());
+    freq_dictionary.erase(freq_dictionary.begin(), freq_dictionary.end());
     std::vector<std::thread> invertedIndexThread;
     for (size_t i = 0; i < input_docs.size(); ++i) {
         invertedIndexThread.emplace_back(
@@ -11,9 +13,9 @@ void InvertedIndex::UpdateDocumentBase(std::vector<std::string> input_docs) {
                     streamDocs << doc;
                     std::string tmp;
                     while (streamDocs >> tmp) {
+                        bool match = false;
                         std::lock_guard<std::mutex> lock(mutex);
                         freq_dictionary[tmp];
-                        bool match = false;
                         for (auto &i: freq_dictionary[tmp]) {
                             if (i.doc_id == doc_id) {
                                 i.count++;
@@ -31,6 +33,7 @@ void InvertedIndex::UpdateDocumentBase(std::vector<std::string> input_docs) {
         thread.join();
     }
 }
+
 std::vector<Entry> InvertedIndex::GetWordCount(const std::string &word) {
-        return freq_dictionary[word];
-    }
+    return freq_dictionary[word];
+}
